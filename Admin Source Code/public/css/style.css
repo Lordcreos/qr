@@ -1,0 +1,192 @@
+@import url("https://fonts.googleapis.com/css?family=Raleway:400,400i,700");
+
+@keyframes slidy {
+0% { left: 0%; }
+20% { left: 0%; }
+25% { left: -100%; }
+45% { left: -100%; }
+50% { left: -200%; }
+70% { left: -200%; }
+75% { left: -300%; }
+95% { left: -300%; }
+100% { left: -400%; }
+}
+
+
+@font-face {
+  font-family: "Satisfy-Regular";
+  src: url("../fonts/Satisfy-Regular.ttf");
+  font-weight: 400; }
+
+@font-face {
+  font-family: "Anglecia Pro Title W01 Bold";
+  src: url("../fonts/Anglecia Pro Title W01 Bold.ttf");
+  font-weight: 400; }
+
+@font-face {
+  font-family: "Nunito-Regular";
+  src: url("../fonts/Nunito-Regular.ttf");
+  font-weight: 400; }
+
+@font-face {
+font-family: 'Gabriola';
+src: local('Gabriola'), url('../fonts/gabriola Font Download.woff') format('woff');
+}
+
+
+
+.dark-mode {
+  background-color: #181f31;
+  color: white;
+}
+
+
+input {
+	outline: none;
+}
+input[type=search] {
+	-webkit-appearance: textfield;
+	-webkit-box-sizing: content-box;
+	font-family: inherit;
+	font-size: 100%;
+}
+input::-webkit-search-decoration,
+input::-webkit-search-cancel-button {
+	display: none; 
+}
+
+
+input[type=search] {
+	background: #ededed url(https://static.tumblr.com/ftv85bp/MIXmud4tx/search-icon.png) no-repeat 9px center;
+	border: solid 1px #ccc;
+	padding: 9px 10px 9px 32px;
+	width: 100%;
+	background-color: transparent;
+	
+	-webkit-border-radius: 10em;
+	-moz-border-radius: 10em;
+	border-radius: 10em;
+	
+	-webkit-transition: all .5s;
+	-moz-transition: all .5s;
+	transition: all .5s;
+}
+input[type=search]:focus {
+	width: 100%;
+	background-color: transparent;
+	border-color: #66CC75;
+	
+	-webkit-box-shadow: 0 0 5px rgba(109,207,246,.5);
+	-moz-box-shadow: 0 0 5px rgba(109,207,246,.5);
+	box-shadow: 0 0 5px #ccc;
+}
+
+
+input:-moz-placeholder {
+	color: #999;
+}
+input::-webkit-input-placeholder {
+	color: #999;
+}
+
+
+.recomanded {
+	height: 170px;
+	background-color: #EDEDED;
+	width: 98%;
+	margin-left: 1%;
+	border-radius: 25px;
+}
+
+.rec {
+	
+	margin-top: 15px;
+}
+
+.rectitle{
+	
+	font-family: "Satisfy-Regular";
+/*	font-weight: bold;*/
+}
+
+.recomandedimg{
+	border-radius: 25px;
+}
+
+
+.productname{
+	font-family:Cambria, "Hoefler Text", "Liberation Serif", Times, "Times New Roman", "serif";
+	font-size: 16px;
+	margin-left: 20px;
+	margin-top: 10px;
+	font-weight: 600;
+}
+
+.productprice{
+	font-size: 14px;
+	margin-top: 10px;
+	font-weight: 600;
+}
+
+
+.discription {
+	height: auto;
+	width: 90%;
+	margin-left: 10%;
+	margin-right: 4%;
+	font-display: auto;
+	font-size: 20px;
+	color: #B1B1B1;
+	font-family: "Gabriola";
+
+}
+
+.discription1 {
+	height: auto;
+	font-display: auto;
+	font-family: "Nunito-Regular";
+
+}
+
+div#slider { overflow: hidden; }
+div#slider figure img { width: 20%; float: left; }
+div#slider figure { 
+  position: relative;
+  width: 500%;
+  margin: 0;
+  left: 0;
+  text-align: left;
+  font-size: 0;
+  animation: 10s slidy infinite; 
+}
+
+
+.productimage{
+	width: 60px;
+height: 60px;
+border-radius: 10px;
+background: #fff;
+border: 1px solid #707070;
+
+}
+
+.rounded-pill{
+	width: 60px;
+	height: 60px;
+}
+
+
+.text-gray {
+	font-size: 14px;
+	white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 25ch;
+}
+
+
+.proname{
+	 font-family:"Anglecia Pro Title W01 Bold" !important;
+}
+
+
