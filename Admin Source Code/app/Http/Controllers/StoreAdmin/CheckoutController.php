@@ -11,14 +11,37 @@ use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Config;
+use PayPal\Api\Amount;
+use PayPal\Api\Payer;
+use PayPal\Api\Payment;
+use PayPal\Api\RedirectUrls;
+use PayPal\Api\Transaction;
+use PayPal\Api\PaymentExecution;
+use PayPal\Auth\OAuthTokenCredential;
+use PayPal\Rest\ApiContext;
+use PayPal\Exception\PayPalConnectionException;
 use MongoDB\Driver\Session;
 
 class CheckoutController extends Controller
 {
+    private $apiContext;
+
     public function  __construct()
     {
         $this->middleware('auth:store');
+
+        $payPalConfig = Config::get('paypal');
+
+        $this->apiContext = new ApiContext(
+            new OAuthTokenCredential(
+                $payPalConfig['client_id'],
+                $payPalConfig['secret']
+            )
+        );
+        $this->apiContext->setConfig($payPalConfig['settings']);
     }
+
     public function completeSubscriptionPayment(Request $request){
         $plan = StoreSubscription::all()->where('id','=',$request->plan_id)->first();
         $currency = Setting::all()->where('key','=','Currency')->first()->value;
@@ -82,5 +105,148 @@ class CheckoutController extends Controller
             return Redirect::route('store_admin.subscription_plans')->with("MSG", "Subscription updated failed due to incomplete payment please contact administration for queries")->with("TYPE", "danger");
         }
 
+    }
+
+    /*public function completeSubscriptionPaymentPayPal(Request $request){
+        $plan = StoreSubscription::all()->where('id','=',$request->plan_id)->first();
+        $currency = Setting::all()->where('key','=','Currency')->first()->value;
+        $secretKey = Setting::all()->where('key','=','StripeSecretKey')->first()->value;
+        \Stripe\Stripe::setApiKey($secretKey);
+
+        $session = \Stripe\Checkout\Session::create([
+            'payment_method_types' => ['card'],
+            'line_items' => [[
+                'price_data' => [
+                    'currency' => $currency,
+                    'product_data' => [
+                        'name' => 'Subscription Plan '.$plan->name,
+                    ],
+                    'unit_amount' => explode('.',$plan->price)[0].explode('.',$plan->price)[1],
+                ],
+                'quantity' => 1,
+            ]],
+            'mode' => 'payment',
+            'success_url' => route('store_admin.subscription_after_complete_payment'),
+            'cancel_url' => route('store_admin.subscription_after_complete_payment'),
+        ]);
+        session(['transactional_id' => $session->id]);
+        session(['plan_id' => $request->plan_id]);
+        error_log('Some message here.');
+        return response()->json($session);
+
+    }
+    public function completeSubscriptionAfterPaymentPayPal(Request $request){
+        $session_id = session('transactional_id');
+        $secretKey = Setting::all()->where('key','=','StripeSecretKey')->first()->value;
+        \Stripe\Stripe::setApiKey($secretKey);
+        $payment_response_details= \Stripe\Checkout\Session::retrieve($session_id);
+
+        if(!$session_id)
+            abort('404');
+
+        $plan_id = session('plan_id');
+        $plan = StoreSubscription::all()->where('id','=',$plan_id)->first();
+        $selected_plan = new SelectedSubscription();
+        $selected_plan->subscription_name = $plan->name;
+        $selected_plan->subscription_price = $plan->price;
+        $selected_plan->subscription_days = $plan->days;
+        $selected_plan->payment_status = $payment_response_details->payment_status;
+        $selected_plan->payment_transactional_id = $session_id;
+        $selected_plan->store_id = auth()->id();
+        $selected_plan->save();
+
+        if($payment_response_details->payment_status == "paid") {
+            $id = Auth::user()->id;
+            $store = Store::find($id);
+            if ($store->subscription_end_date < date('Y-m-d'))
+                $store->subscription_end_date = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . $plan->days . ' days'));
+            else
+                $store->subscription_end_date = date('Y-m-d', strtotime($store->subscription_end_date . ' +' . $plan->days . ' days'));
+            $store->save();
+            session()->forget('plan_id');
+            session()->forget('transactional_id');
+            return Redirect::route('store_admin.subscription_plans')->with("MSG", "Subscription updated Successfully your new Subscription end date is ".date('d-m-Y',strtotime(Store::find($id)->subscription_end_date)))->with("TYPE", "success");
+        }else{
+            return Redirect::route('store_admin.subscription_plans')->with("MSG", "Subscription updated failed due to incomplete payment please contact administration for queries")->with("TYPE", "danger");
+        }
+
+    }*/
+
+    //paypal
+    public function completeSubscriptionPaymentPayPal(Request $request){
+        session(['plan_id' => $request->plan_id]);
+
+        $payer = new Payer();
+        $payer->setPaymentMethod('paypal');
+
+        $amount = new Amount();
+        $amount->setTotal('3.99');
+        $amount->setCurrency('USD');
+
+        $transaction = new Transaction();
+        $transaction->setAmount($amount);
+        // $transaction->setDescription('See your IQ results');
+
+        $callbackUrl = route('store_admin.subscription_after_complete_payment_paypal');
+
+        $redirectUrls = new RedirectUrls();
+        $redirectUrls->setReturnUrl($callbackUrl)
+            ->setCancelUrl($callbackUrl);
+
+        $payment = new Payment();
+        $payment->setIntent('sale')
+            ->setPayer($payer)
+            ->setTransactions(array($transaction))
+            ->setRedirectUrls($redirectUrls);
+
+        try {
+            $payment->create($this->apiContext);
+            return response()->json($payment->getApprovalLink());
+        } catch (PayPalConnectionException $ex) {
+            echo $ex->getData();
+        }
+    }
+    public function completeSubscriptionAfterPaymentPayPal(Request $request){
+        $paymentId = $request->input('paymentId');
+        $payerId = $request->input('PayerID');
+        $token = $request->input('token');
+
+        if (!$paymentId || !$payerId || !$token) {
+            return Redirect::route('store_admin.subscription_plans')->with("MSG", "Subscription updated failed due to incomplete payment please contact administration for queries")->with("TYPE", "danger");
+        }
+
+        $payment = Payment::get($paymentId, $this->apiContext);
+
+        $plan_id = session('plan_id');
+        $plan = StoreSubscription::all()->where('id','=',$plan_id)->first();
+
+        $selected_plan = new SelectedSubscription();
+        $selected_plan->subscription_name = $plan->name;
+        $selected_plan->subscription_price = $plan->price;
+        $selected_plan->subscription_days = $plan->days;
+        $selected_plan->payment_status = $payerId;
+        $selected_plan->payment_transactional_id = $payerId;
+        $selected_plan->store_id = auth()->id();
+        $selected_plan->save();
+
+        $execution = new PaymentExecution();
+        $execution->setPayerId($payerId);
+
+
+        $result = $payment->execute($execution, $this->apiContext);
+
+        if ($result->getState() === 'approved') {
+            $id = Auth::user()->id;
+            $store = Store::find($id);
+            if ($store->subscription_end_date < date('Y-m-d'))
+                $store->subscription_end_date = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . $plan->days . ' days'));
+            else
+                $store->subscription_end_date = date('Y-m-d', strtotime($store->subscription_end_date . ' +' . $plan->days . ' days'));
+            $store->save();
+            session()->forget('plan_id');
+            session()->forget('transactional_id');
+            return Redirect::route('store_admin.subscription_plans')->with("MSG", "Subscription updated Successfully your new Subscription end date is ".date('d-m-Y',strtotime(Store::find($id)->subscription_end_date)))->with("TYPE", "success");
+        }
+        return Redirect::route('store_admin.subscription_plans')->with("MSG", "Subscription updated failed due to incomplete payment please contact administration for queries")->with("TYPE", "danger");
     }
 }

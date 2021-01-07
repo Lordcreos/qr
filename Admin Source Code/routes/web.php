@@ -223,6 +223,9 @@ Route::prefix('/admin/store/') ->as('store_admin.')
         Route::get('/subscription/compete/payment/complete', 'StoreAdmin\CheckoutController@completeSubscriptionAfterPayment')->name('subscription_after_complete_payment');
         Route::get('/settings', 'RestaurantAdminPageController@settings')->name('settings');
         Route::post('/settings/update', 'StoreAdmin\AccountSettings@update_store_settings')->name('update_store_settings');
+        //paypal
+        Route::post('/subscription/compete/payment/paypal', 'StoreAdmin\CheckoutController@completeSubscriptionPaymentPayPal')->name('subscription_complete_payment_paypal');
+        Route::get('/subscription/compete/payment/complete/paypal', 'StoreAdmin\CheckoutController@completeSubscriptionAfterPaymentPayPal')->name('subscription_after_complete_payment_paypal');
     // customers
         Route::get('/customers', 'RestaurantAdminPageController@customers')->name('customers');
         Route::get('/waiter/calls', 'RestaurantAdminPageController@waiter_calls')->name('waiter_calls');

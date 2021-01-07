@@ -57,8 +57,8 @@
                                 <span class="badge badge-danger">{{$data->days}} Days</span>
                             </td>
                             <td style="text-align: center">
-                                <button {{$isStripeEnabled!=1 ?"disabled":NULL}} onclick="triggerPayment({{$data->id}})" class="btn btn-success btn-sm text-white">Buy Now</button>
-{{--                                onclick="document.getElementById('form-subscription-{{$data->id}}').submit();"--}}
+                                <button {{$isStripeEnabled!=1 ?"disabled":NULL}} onclick="triggerPayment({{$data->id}})" class="btn btn-success btn-sm text-white">Buy Now | Stripe</button>
+                                <button onclick="triggerPaymentPayPal({{$data->id}})" class="btn btn-success btn-sm text-white">Buy Now | PayPal</button>
                             </td>
                             <form method="post" id="form-subscription-{{$data->id}}" action="{{route('store_admin.subscription_complete_payment')}}">
                                 <input name="plan_id" value="{{$data->id}}" style="visibility:hidden"/>

@@ -173,7 +173,7 @@
     var stripe = Stripe('{{$publishableKey ?? ''}}');
     var checkoutButton = document.getElementById('checkout-button');
 
-     function triggerPayment(id) {
+    function triggerPayment(id) {
         // Create a new Checkout Session using the server-side endpoint you
         // created in step 3.
         fetch('{{route('store_admin.subscription_complete_payment')}}'+"?plan_id="+id, {
@@ -188,6 +188,33 @@
             })
             .then(function(session) {
                 return stripe.redirectToCheckout({ sessionId: session.id });
+            })
+            .then(function(result) {
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            })
+            .catch(function(error) {
+                console.log("err");
+                alert('PAYMENT_ERROR #404');
+                console.error('Error:', error);
+            });
+    }
+    function triggerPaymentPayPal(id) {
+        // Create a new Checkout Session using the server-side endpoint you
+        // created in step 3.
+        fetch('{{route('store_admin.subscription_complete_payment_paypal')}}'+"?plan_id="+id, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': "{{ csrf_token()}}",
+            },
+            body: JSON.stringify({plan_id:id})
+        })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(session) {
+                return location.href = session;
             })
             .then(function(result) {
                 if (result.error) {
